@@ -1,0 +1,419 @@
+const latitude = 31.914352288683233;   // Place latitude for sun times calculation
+const longitude = 34.99863056272468;  // Place longitude for sun times calculation
+
+let currentPeriod;
+let now = new Date();
+//now.setHours(5);
+
+let sunTimes = SunCalc.getTimes(now, latitude, longitude);
+console.log("The current date is: " + now);
+console.log("Sunset is at: " + sunTimes.sunset);
+console.log("Sunrise is at:" + sunTimes.sunrise);
+
+//updating the text at the top of the screen
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+import { getDatabase, ref, onValue, get, set } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBVk4Y4CW3pB-3_bbuE8rDHXopUnZuFmSw",
+  authDomain: "schedule-mh.firebaseapp.com",
+  projectId: "schedule-mh",
+  storageBucket: "schedule-mh.appspot.com",
+  messagingSenderId: "950949574717",
+  appId: "1:950949574717:web:6cc6dfe51ef405e3cf5254"
+};
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const topTextRef = ref(db, "topText");
+onValue(topTextRef, snapshot => {
+    if (true) {
+        document.getElementById("top-text").textContent = snapshot.val();
+    }
+});
+
+setInterval(async () => {
+    sunTimes = SunCalc.getTimes(now, latitude, longitude);
+    console.log("The current date is: " + now);
+    console.log("Sunset is at: " + sunTimes.sunset);
+    console.log("Sunrise is at:" + sunTimes.sunrise);
+}, 1000 * 60 * 60 * 24); //every day update the new sun times
+
+// const REAL_START = Date.now(); // real time when simulation starts
+// const SIM_START = new Date();  // virtual time starts at current real time
+
+// const SPEED = 80000; // 1 real second = 12 virtual minutes → 24 hours in 2 minutes
+
+// function getSimulatedTime() {
+//     const elapsed = Date.now() - REAL_START; // milliseconds
+//     return new Date(SIM_START.getTime() + elapsed * SPEED);
+// }
+
+
+// Function to update the clock
+function updateClock() {
+    const clockElement = document.getElementById("clock");
+    if (!clockElement) return;
+
+    // Format Hebrew date
+    const hebrewDateFormatter = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', {
+        day: 'numeric',
+        month: 'long'
+    });
+    const hebrewDayFormatter = new Intl.DateTimeFormat('he-IL-u-ca-hebrew', {
+        weekday: 'long'
+    });
+
+    now = new Date();
+
+    let hebrewDate = hebrewDateFormatter.format(now).replace(' ב', ' ');
+    const hebrewDay = hebrewDayFormatter.format(now);
+
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const sunriseMinutes = sunTimes.sunrise.getHours() * 60 + sunTimes.sunrise.getMinutes();
+    const sunsetMinutes = sunTimes.sunset.getHours() * 60 + sunTimes.sunset.getMinutes();
+
+    if (nowMinutes > sunsetMinutes) {
+        console.log("אור ל");
+        const tomorrow = new Date(now);
+        tomorrow.setDate(now.getDate() + 1);
+        hebrewDate = hebrewDateFormatter.format(tomorrow).replace(' ב', ' ');
+        hebrewDate = `אור ל${hebrewDate}`;
+    } else if (nowMinutes < sunriseMinutes) {
+        hebrewDate = `אור ל${hebrewDate}`;
+    }
+
+    // Optional: Convert numbers to Hebrew gematria
+    function toGematria(num) {
+        const letters =
+            ["", "א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ז׳", "ח׳", "ט׳",
+             "י׳", 'י"א', 'י"ב', 'י"ג', 'י"ד', 'ט"ו', 'ט"ז', 'י"ז', 'י"ח', 'י"ט',
+             "כ׳", 'כ"א', 'כ"ב', 'כ"ג', 'כ"ד', 'כ"ה', 'כ"ו', 'כ"ז', 'כ"ח', 'כ"ט',
+             "ל׳", 'ל"א'];
+        return num <= 32 ? letters[num] : num;
+    }
+
+    hebrewDate = hebrewDate.replace(/(\d+)/g, match => toGematria(parseInt(match)));
+
+
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+
+    //clockElement.innerHTML = `${hebrewDate} - ${hours}:${minutes} - ${hebrewDay}`;
+
+    const gematriaHebrewDate = hebrewDate.replace(/,/g, "").replace(/(\d+)/g, match => toGematria(parseInt(match, 10)));
+
+    if(now.getSeconds() === 0 && now.getMinutes() === 0){
+        console.log(hebrewDay+": "+ gematriaHebrewDate); //printing every hour the day and date to see if works right 
+    }
+
+    // Update clock display
+    clockElement.innerHTML = `${gematriaHebrewDate} - ${hours}:${minutes} - ${hebrewDay}`; //:${seconds}
+}
+
+setInterval(updateClock, 1000);
+updateClock(); // Run immediately
+
+
+const YOUTUBE_URL = "https://www.youtube.com/watch?v=X1-tm1p_xjI";
+const overlay = document.getElementById("youtube-overlay");
+overlay.style.backgroundImage = "url('images/default.jpg')"; //cover image for when video doesnt play
+// Convert a normal URL into an autoplay background URL
+function getBackgroundYouTubeUrl(url) {
+    const idMatch = url.match(/(?:v=|youtu\.be\/)([^&]+)/);
+    if (!idMatch) return null;
+    const id = idMatch[1];
+
+    return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&enablejsapi=1`;
+}
+
+function setYouTubeBackground() {
+    const iframe = document.getElementById("youtube-iframe");
+    iframe.src = getBackgroundYouTubeUrl(YOUTUBE_URL);
+}
+setYouTubeBackground();
+
+function updateYouTubePlayback() {
+    const currentPeriod = document.querySelector(".current-class").textContent.trim().replace(/[0-9:]/g, '');
+    console.log("Update Youtube: " + currentPeriod);
+    const praying = [
+        "תפילת שחרית", "תפילת מוסף", "תפילת מנחה",
+        "תפילת ערבית", "תפילת מעריב",
+        "שחרית", "מוסף", "מנחה", "ערבית", "מעריב"
+    ].includes(currentPeriod);
+    
+    if (praying) {
+        overlay.style.opacity = "1";   // show image
+    } else {
+        overlay.style.opacity = "0";   // show video
+    }
+}
+
+
+// Function to read the schedule from JSON
+async function readSchedule() {
+    const daysOfWeek = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+    const now = new Date();
+    const todayIndex = now.getDay();
+    const weekday = daysOfWeek[todayIndex];
+    const dateKey = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
+
+    let data;
+
+    const response = await fetch("schedule.json");
+    const localData = await response.json();
+
+    if (!localData[weekday]) throw new Error("No fallback data for today");
+
+    data = {
+        grades: localData.grades,
+        [weekday]: localData[weekday]
+    };
+
+    
+    if (!Array.isArray(data.grades)) throw new Error("Invalid or missing grades");
+
+    const grades = data.grades;
+    const todaySchedule = data[weekday];
+
+    if (!Array.isArray(todaySchedule)) throw new Error("Invalid or missing schedule for today");
+
+    const headers = ["שעה", ...grades];
+    const filteredSchedule = todaySchedule.map(({ "שעה": time, ...classes }) => {
+        return [time, ...grades.map(grade => classes[grade] || "")];
+    });
+
+    return { headers, filteredSchedule };
+}
+
+
+let lastCurrentPeriod = null;  // Track the last current period for comparison
+let lastScheduleDay = new Date().getDay(); //Track the last day to compare and update day if needed
+// Function to load the schedule initially
+async function loadSchedule() {
+    const { headers, filteredSchedule } = await readSchedule();
+
+    if (filteredSchedule.length === 0) {
+        console.log("No schedule data to display.");
+        return;
+    }
+
+    const scheduleHeaders = document.getElementById("schedule-headers");
+    scheduleHeaders.innerHTML = ""; // Clear existing headers
+
+    // Reverse the order of headers for RTL layout
+    headers.reverse().forEach(headerText => {
+        const header = document.createElement("div");
+        header.textContent = headerText;
+        header.style.textAlign = "center";
+        scheduleHeaders.appendChild(header);
+    });
+
+    const scheduleRows = document.getElementById("schedule-rows");
+    scheduleRows.innerHTML = ""; // Clear previous rows
+
+    for (const [rowIndex, row] of filteredSchedule.entries()) {
+        const firstClass = row.slice(1).every(cell => cell === row[1]);
+        
+        const rowElement = document.createElement("div");
+        rowElement.classList.add("schedule-row");
+
+        if (firstClass) { //if everyone has the same class
+            // If all classes are the same:
+            // 1. Keep the time cell in the far right column
+            // 2. Center the class cell across the remaining columns
+            // Create a single centered class cell across the rest of the columns
+
+            const classCell = document.createElement("div");
+            classCell.innerHTML = row[1]; // The class name (all cells are the same)
+            //rowElement.style.boxShadow = "inset 0 -10px 10px -5px rgba(255, 255, 255, 0.2)";
+            classCell.style.textAlign = "center";
+            classCell.style.gridColumn = `1 / span ${row.length - 1}`; // Span across remaining columns
+            rowElement.appendChild(classCell);
+
+            const timeCell = document.createElement("div");
+            timeCell.textContent = row[0];
+            timeCell.style.textAlign = "center";
+            timeCell.style.gridColumn = `${row.length}`; // Move the time cell to the last column
+            rowElement.appendChild(timeCell);
+        } else {
+            // If classes are different, add each class as usual, but reverse the content for RTL
+            row.reverse().forEach((cellText, cellIndex) => {
+                console.log("\""+cellText+"\"");
+                const cell = document.createElement("div");
+                cell.textContent = cellText;
+                cell.style.textAlign = "center";
+
+                // Add border to middle cells between classes of different grades
+                if (cellIndex > 0 && cellIndex < row.length - 1) {
+                    cell.style.borderLeft = "3px solid rgba(255,255,255,0.25)";
+                }
+                cell.style.padding = "0 4px";
+
+                rowElement.appendChild(cell);
+            });
+        }
+
+        // Add a unique ID to each row for tracking
+        rowElement.id = `row-${rowIndex}`;
+
+        scheduleRows.appendChild(rowElement);
+    };
+
+    const fakeRow = document.createElement("div");
+    fakeRow.classList.add("fake-row");
+    document.getElementById("schedule-rows").appendChild(fakeRow);
+
+    updateSederErevRow();    //adding the page to seder erev
+}
+
+//this code will try to read the page to learn in seder erev and add it to that row
+const sederErevRef = ref(db, "sederErev");
+onValue(sederErevRef, snapshot => {
+    updateSederErevRow();
+});
+
+async function updateSederErevRow() {
+    const sederErevRef = ref(db, "sederErev");
+    const snapshot = await get(sederErevRef);
+    if (snapshot.exists()) {
+        const data = snapshot.val();
+        let page = data.page;
+        const today = new Date().toISOString().slice(0, 10);
+        if (data.lastUpdated !== today) {
+            page = nextPage(data.page, data.onlyPage);
+            set(sederErevRef, { page, lastUpdated: today, onlyPage: data.onlyPage });
+        }
+        
+        document.querySelectorAll("#schedule-rows .schedule-row div").forEach(div => {
+        if (div.textContent.includes("סדר ערב")) {
+            div.textContent = `סדר ערב - ${page}`;
+            div.style.direction = "rtl";
+        }
+        });
+    }
+}
+
+function nextPage(current, onlyPage) {
+    const hebrewLetters = [
+        "א","ב","ג","ד","ה","ו","ז","ח","ט","י","יא","יב","יג","יד","טו","טז",
+        "יז","יח","יט","כ","כא","כב","כג","כד","כה","כו","כז","כח","כט","ל","לא",
+        "לב","לג","לד","לה","לו","לז","לח","לט","מ","מא","מב","מג","מד","מה","מו",
+        "מז","מח","מט","נ","נא","נב","נג","נד","נה","נו","נז","נח","נט","ס","סא","סב",
+        "סג","סד","סה","סו","סז","סח","סט","ע","עא","עב","עג","עד","עה","עו","עז",
+        "עח","עט","פ","פא","פב","פג","פד","פה","פו","פז","פח","פט","צ","צא","צב",
+        "צג","צד","צה","צו","צז","צח","צט","ק","קא","קב","קג","קד","קה","קו","קז",
+        "קח","קט","קי","קיא","קיב","קיג","קיד","קטו","קטז","קיז","קיח","קיט","קכ",
+        "קכא","קכב","קכג","קכד","קכה","קכו","קכז","קכח","קכט","קל","קלא","קלב","קלג",
+        "קלד","קלה","קלו","קלז","קלח","קלט","קמ","קמא","קמב","קמג","קמד","קמה","קמו",
+        "קמז","קמח","קמט","קנ","קנא","קנב","קנג","קנד","קנה","קנו","קנז","קנח","קנט",
+        "קס","קסא","קסב","קסג","קסד","קסה","קסו","קסז","קסח","קסט","קע","קעא","קעב",
+        "קעג","קעד","קעה","קעו","קעז","קעח","קעט","קפ"
+    ];
+
+    // Extract base letters and optional symbol
+    const match = current.match(/^([\u0590-\u05FF]+)([.:])?$/);
+    if (!match) return current;
+
+    const base = match[1];
+    const symbol = match[2] || null;
+    const index = hebrewLetters.indexOf(base);
+    if (index === -1) return current;
+
+    // --- MODE A: onlyPage = false (one-side page: no . no :) ---
+    if (!onlyPage) {
+        if (index + 1 < hebrewLetters.length) {
+            return hebrewLetters[index + 1]; // No . or :
+        }
+        return current;
+    }
+
+    // --- MODE B: onlyPage = true (paper: alternate . :) ---
+    if (symbol === ".") {
+        return `${base}:`;
+    } else if (symbol === ":") {
+        if (index + 1 < hebrewLetters.length) {
+            return `${hebrewLetters[index + 1]}.`;
+        }
+        return current;
+    } else {
+        // No symbol present, default to starting with "."
+        return `${base}.`;
+    }
+}
+
+  
+
+// Function to update the current class and scroll to it
+async function updateSchedule() {
+    const { filteredSchedule } = await readSchedule();
+    if (filteredSchedule.length === 0) return;
+
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    let newCurrentIndex = -1;
+
+    // Find the current period
+    for (let i = 0; i < filteredSchedule.length; i++) {
+        const periodTime = filteredSchedule[i][0];
+        const [hour, minutes] = periodTime.split(":").map(Number);
+        const periodMinutes = hour * 60 + minutes;
+
+        if (periodMinutes <= currentTime) {
+            newCurrentIndex = i;
+        }
+    }
+
+    // If there's no change in the current class, exit
+    if (newCurrentIndex === -1 || newCurrentIndex === lastCurrentPeriod) return;
+
+    const scheduleRows = document.getElementById("schedule-rows").children;
+
+    // Transition the old current class to normal
+    if (lastCurrentPeriod !== null && scheduleRows[lastCurrentPeriod]) {
+        scheduleRows[lastCurrentPeriod].classList.remove("current-class");
+        scheduleRows[lastCurrentPeriod].classList.add("normal-class");
+    }
+
+    // Apply the current class to the new current period
+    if (scheduleRows[newCurrentIndex]) {
+        scheduleRows[newCurrentIndex].classList.remove("normal-class");
+
+        // Delay applying the new "current-class" to allow previous transition to complete
+        setTimeout(() => {
+            scheduleRows[newCurrentIndex].classList.add("current-class");
+            updateYouTubePlayback();
+
+            setTimeout(() => {
+                // Scroll the new current class into view
+                const scheduleContainer = document.getElementById("schedule-container");
+                const newCurrentElement = scheduleRows[newCurrentIndex];
+
+                scheduleContainer.scrollTo({
+                    top: newCurrentElement.offsetTop - scheduleContainer.offsetTop,
+                    behavior: "smooth"
+                });
+
+                lastCurrentPeriod = newCurrentIndex;
+            }, 1500);
+        }, 1500); // Delay matches CSS transition time (1.5s)
+
+    }
+}
+
+loadSchedule();
+
+setInterval(async () => {
+    const now = new Date();
+    const currentDay = now.getDay();
+
+    if (currentDay !== lastScheduleDay) {
+        lastScheduleDay = currentDay;
+        await loadSchedule(); // Reload schedule for the new day
+    
+        // Scroll to the top after loading the new schedule
+        const scheduleContainer = document.getElementById("schedule-container");
+        scheduleContainer.scrollTo({ top: 0, behavior: "smooth" });
+    }    
+    updateSchedule();
+
+}, 1000);
