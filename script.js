@@ -138,9 +138,8 @@ function updateYouTubePlayback() {
     const praying = [
         "תפילת שחרית", "תפילת מוסף", "תפילת מנחה",
         "תפילת ערבית", "תפילת מעריב",
-        "שחרית", "מוסף", "מנחה", "ערבית", "מעריב"
+        "שחרית", "מוסף", "מנחה", "ערבית", "מעריב", "שחרית חגיגית", "שחרית חגיגית עם הלל"
     ].includes(currentPeriod);
-    
     if (praying) {
         overlay.style.opacity = "1";   // show image
     } else {
@@ -415,5 +414,6 @@ setInterval(async () => {
         scheduleContainer.scrollTo({ top: 0, behavior: "smooth" });
     }    
     updateSchedule();
+
 
 }, 1000);
