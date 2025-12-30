@@ -114,7 +114,7 @@ setInterval(updateClock, 1000);
 updateClock(); // Run immediately
 
 
-const YOUTUBE_URL = "https://www.youtube.com/watch?v=X1-tm1p_xjI";
+const YOUTUBE_URL = "https://www.youtube.com/watch?v=XsFe56c_k2c";
 const overlay = document.getElementById("youtube-overlay");
 overlay.style.backgroundImage = "url('images/default.jpg')"; //cover image for when video doesnt play
 // Convert a normal URL into an autoplay background URL
@@ -417,3 +417,4 @@ setInterval(async () => {
 
 
 }, 1000);
+
